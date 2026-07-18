@@ -160,19 +160,27 @@ impl HermesProtocol {
         );
     }
 
-    pub fn send_message(&mut self, who: &Addr, message: DecodedMessage) -> Result<(), ProtocolError> {
+    pub fn send_message(
+        &mut self,
+        who: &Addr,
+        message: DecodedMessage,
+    ) {
         if !self.conversation_protocol.borrow().conversation_exists(who) {
-            return Err(ProtocolError::UnknownUser {
+            self.interface_protocol.protocol_error(&ProtocolError::UnknownUser {
                 user: who.clone(),
                 reason: "No active conversation with that ID.".into(),
             });
         }
-        let message = self
+        
+        self
             .conversation_protocol
             .borrow_mut()
-            .send_message(who, message)?
-            .self_as_protocol_data();
-        self.data_serving_protocol.send_else_cache_data(message);
+            .send_message(who, message)
+            .map(|data| data.self_as_protocol_data())
+            .map(|data| self.data_serving_protocol.send_else_cache_data(data))
+            .map_err(|err| {
+                self.interface_protocol.protocol_error(&err);
+            });
         Ok(())
     }
 }
