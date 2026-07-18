@@ -164,7 +164,7 @@ impl HermesProtocol {
         if !self.conversation_protocol.borrow().conversation_exists(who) {
             return Err(ProtocolError::UnknownUser {
                 user: who.clone(),
-                reason: "No active conversation.".into(),
+                reason: "No active conversation with that ID.".into(),
             });
         }
         let message = self
