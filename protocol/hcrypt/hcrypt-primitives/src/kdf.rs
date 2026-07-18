@@ -35,7 +35,7 @@ pub fn argon2(
             reason: e.to_string(),
         })?;
 
-    return Ok(tmp.into());
+    Ok(tmp.into())
 }
 
 #[test]

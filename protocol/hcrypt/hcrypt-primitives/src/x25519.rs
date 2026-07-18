@@ -182,7 +182,7 @@ impl PartialEq for RawPrivateKey {
         // this way we don't need to compare the private keys
         let self_public_key = self.public_key();
         let other_public_key = other.public_key();
-        return self_public_key == other_public_key;
+        self_public_key == other_public_key
     }
 }
 

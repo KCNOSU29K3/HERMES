@@ -1,10 +1,12 @@
+
 use error_set::error_set;
 use hcrypt::errors;
-use rmp_serde::{encode, decode};
+use rmp_serde::{decode, encode};
 
-use crate::datatypes::{RequestID, Addr};
+use crate::datatypes::{Addr, RequestID};
 
 error_set! {
+    #[allow(clippy::all)]
     pub ProtocolError := {
         ConversationNotFound,
         HandshakeError,

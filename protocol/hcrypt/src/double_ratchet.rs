@@ -178,7 +178,7 @@ impl Fundamentals {
         let (sending_ratchet, receiving_ratchet) =
             initialize_ratchets(is_initiator, &mut root_ratchet);
 
-        return Self {
+        Self {
             identity_pair: identity_key,
             root_ratchet,
             receiving_ratchet,
@@ -191,7 +191,7 @@ impl Fundamentals {
             prev_send_chain_num: 0,
             key_buff: [0u8; 32],
             is_initiator,
-        };
+        }
     }
 
     /// Executes a DH ratchet step.
@@ -227,7 +227,7 @@ impl Fundamentals {
         );
 
         self.number_sent += 1;
-        return ratchet_msg;
+        ratchet_msg
     }
 
     /// Generates the decryption key for a given [`DoubleRatchetMessage`], potentially
@@ -242,7 +242,7 @@ impl Fundamentals {
     /// This function will return a crate Error if the underlying decryption implementation
     /// fails to decrypt.
     fn recv(&mut self, message: &DoubleRatchetMessage) -> Result<Vec<u8>, DoubleRatchetError> {
-        let plaintext = self.attempt_decrypt_with_stored_keys(&message)?;
+        let plaintext = self.attempt_decrypt_with_stored_keys(message)?;
         if let Some(plaintext) = plaintext {
             return Ok(plaintext);
         }
@@ -254,7 +254,7 @@ impl Fundamentals {
         // unwrapping is safe since above clause will set the key.
         if self.peer_ratchet_key.unwrap() != message.public_key {
             self.skip_message_keys(&message.previous_chain_count)?;
-            self.dh_ratchet(message.public_key.clone());
+            self.dh_ratchet(message.public_key);
         }
 
         self.skip_message_keys(&message.current_chain_count)?;
@@ -266,7 +266,7 @@ impl Fundamentals {
         let plaintext = decrypt(&self.key_buff, &message.ciphertext)?;
 
         self.zero_buffers();
-        return Ok(plaintext);
+        Ok(plaintext)
     }
 
     /// Checks if a given message has an already present decryption key.
@@ -283,7 +283,7 @@ impl Fundamentals {
             self.skipped_message_keys.remove(&index_key);
             return Ok(Some(plaintext));
         }
-        return Ok(None);
+        Ok(None)
     }
 
     /// Skips a given amount of message keys.
@@ -312,7 +312,7 @@ impl Fundamentals {
             self.zero_buffers();
             self.number_received += 1
         }
-        return Ok(());
+        Ok(())
     }
 
     fn zero_buffers(&mut self) {
@@ -378,7 +378,7 @@ impl Initiator {
         let core = Fundamentals::initialize(secret, identity_key, true);
         secret.zeroize();
 
-        return Ok((Self { core }, init_bundle));
+        Ok((Self { core }, init_bundle))
     }
 }
 
@@ -429,7 +429,7 @@ impl Responder {
 
         let core = Fundamentals::initialize(secret, identity_key, false);
         secret.zeroize();
-        return Ok(Self { core });
+        Ok(Self { core })
     }
 }
 
@@ -452,10 +452,6 @@ pub trait DoubleRatchetProtocolImplementor {
     /// Decrypts a message as specified by Signal's Double Ratchet Protocol.
     fn recv(&mut self, message: &DoubleRatchetMessage) -> Result<Vec<u8>, DoubleRatchetError>;
 
-    /// Serializes the state of this actor, securely zeroizing it in the process.
-    /// This function will render the struct instance it was called upon unusable.
-    // fn serialize_state(&mut self, password: &[u8]) -> Vec<u8>;
-
     /// Getter function that determines if this Implementor was the initiator in
     /// the conversation.
     fn is_initiator(&self) -> bool;
@@ -475,29 +471,29 @@ pub trait KeyResolver {
 
 impl DoubleRatchetProtocolImplementor for Initiator {
     fn send(&mut self, message: &[u8]) -> DoubleRatchetMessage {
-        return self.core.send(message);
+        self.core.send(message)
     }
 
     fn recv(&mut self, message: &DoubleRatchetMessage) -> Result<Vec<u8>, DoubleRatchetError> {
-        return self.core.recv(message);
+        self.core.recv(message)
     }
 
     fn is_initiator(&self) -> bool {
-        return true;
+        true
     }
 }
 
 impl DoubleRatchetProtocolImplementor for Responder {
     fn send(&mut self, message: &[u8]) -> DoubleRatchetMessage {
-        return self.core.send(message);
+        self.core.send(message)
     }
 
     fn recv(&mut self, message: &DoubleRatchetMessage) -> Result<Vec<u8>, DoubleRatchetError> {
-        return self.core.recv(message);
+        self.core.recv(message)
     }
 
     fn is_initiator(&self) -> bool {
-        return false;
+        false
     }
 }
 

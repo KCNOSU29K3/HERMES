@@ -32,12 +32,10 @@ pub fn encrypt(key: &[u8], payload: &[u8]) -> Vec<u8> {
         Err(err) => panic!("Encryption failed: {}", err),
     };
 
-    let result = [
+    [
         nonce,
         ciphertext,
-    ].concat();
-    
-    result
+    ].concat()    
 }
 
 /// primitive method for decrypting data.
@@ -65,7 +63,7 @@ pub fn decrypt(key: &[u8], ciphertext: &[u8]) -> Result<Vec<u8>, DecryptionError
         .decrypt(nonce.into(), ciphertext)
         .map_err(|_| DecryptionError::InvalidKey)?;
 
-    return Ok(plaintext);
+    Ok(plaintext)
 }
 
 

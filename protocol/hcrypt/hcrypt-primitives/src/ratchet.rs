@@ -29,10 +29,10 @@ impl Ratchet {
     ///
     /// A new `Ratchet`.
     pub fn new(key: [u8; RATCHET_KEY_INIT_LENGTH]) -> Self {
-        return Self {
+        Self {
             state: key,
             hkdf_buff: [0u8; 64],
-        };
+        }
     }
 
     /// Turn the ratchet, generating a new value.

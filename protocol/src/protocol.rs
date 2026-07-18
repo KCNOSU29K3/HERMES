@@ -2,7 +2,7 @@ use crate::{
     datatypes::{DBData, DataServer, DbWrite, DecodedMessage, ProtocolData, UserInterface},
     errors::ProtocolError,
 };
-use std::{cell::RefCell, collections::HashMap, f64::consts::E, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::datatypes::{Addr, CryptoProtocol, DbAccessProtocol, DbQuery, RequestID};
 
@@ -111,9 +111,9 @@ impl HermesProtocol {
     pub fn create_new_conversation(&mut self, target: Addr) {
         let query_id = self
             .database_protocol
-            .query_db(DbQuery::IdentityKeyLookup)
-            .add(DbQuery::PrekeyLookup)
-            .add(DbQuery::OtkLookup)
+            .query_db(DbQuery::IdentityKey)
+            .add(DbQuery::Prekey)
+            .add(DbQuery::Otk)
             .execute();
 
         let user = self.user.clone();
@@ -149,9 +149,9 @@ impl HermesProtocol {
             Ok(())
         });
         let timeout_handler = Box::new(move || {
-            return Err(ProtocolError::FailedRequest {
+            Err(ProtocolError::FailedRequest {
                 reason: "Failed to connect to database. Could not pull key components.".into(),
-            });
+            })
         });
 
         self.request_mapper.insert(
@@ -160,7 +160,7 @@ impl HermesProtocol {
         );
     }
 
-    fn send_message(&mut self, who: &Addr, message: DecodedMessage) -> Result<(), ProtocolError> {
+    pub fn send_message(&mut self, who: &Addr, message: DecodedMessage) -> Result<(), ProtocolError> {
         if !self.conversation_protocol.borrow().conversation_exists(who) {
             return Err(ProtocolError::UnknownUser {
                 user: who.clone(),

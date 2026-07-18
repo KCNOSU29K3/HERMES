@@ -142,7 +142,7 @@ pub fn derive_new(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
                     .map(|field| field.ident.as_ref().unwrap())
                     .collect::<Vec<_>>();
 
-                return quote! {
+                quote! {
                     impl #struct_identifier {
                         pub fn new(#(#args: #sig_types),*) -> Self {
                             Self {
@@ -151,13 +151,13 @@ pub fn derive_new(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
                         }
                     }
                 }
-                .into();
+                .into()
             }
             Fields::Unnamed(_) => unimplemented!("New() macro not implemented for unnamed structs"),
             Fields::Unit => unimplemented!("New() macro not implemented for unit structs."),
         },
         Data::Enum(data_enum) => {
-            let ctors = data_enum.variants.iter().map(|v| variant_constructor(&v));
+            let ctors = data_enum.variants.iter().map(variant_constructor);
 
             quote! {
                 impl #struct_identifier {

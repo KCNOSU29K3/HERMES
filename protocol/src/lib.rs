@@ -1,7 +1,5 @@
 pub mod protocol;
 pub mod crypto_protocol;
-mod serialization_protocol;
-mod hash_protocol;
-mod datatypes;
-mod errors;
+pub mod datatypes;
+pub mod errors;
 mod networker;

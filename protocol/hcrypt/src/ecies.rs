@@ -85,7 +85,7 @@ pub fn ecies_encrypt(
         encrypted_data.as_slice(),
     ].concat();
 
-    return Ok(payload);
+    Ok(payload)
 }
 
 /// Decrypts a generated ciphertext through an ECIES protocol.
@@ -158,5 +158,5 @@ pub fn ecies_decrypt(
 
     let decrypted_data = decrypt(&decryption_key, payload)?;
 
-    return Ok(decrypted_data);
+    Ok(decrypted_data)
 }

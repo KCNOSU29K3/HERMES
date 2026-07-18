@@ -1,6 +1,5 @@
 use hcrypt::double_ratchet::{DoubleRatchetMessage, InitiatingBundle};
 use serde::{Deserialize, Serialize};
-use std::hash::{Hash, Hasher};
 
 use crate::{errors::ProtocolError};
 use hcrypt::{
@@ -18,8 +17,6 @@ pub const SERVER_ADDR: &str = "HOME";
 /// The agreed upon Type that is used to identify requests that are
 /// being processed.
 pub type RequestID = Uuid;
-
-pub type HashFactory = fn() -> Box<dyn Hasher>;
 
 #[derive(Debug)]
 pub struct CryptMessage {
@@ -42,9 +39,9 @@ pub enum MessageType {
 
 #[derive(Debug)]
 pub enum DbQuery {
-    IdentityKeyLookup,
-    PrekeyLookup,
-    OtkLookup,
+    IdentityKey,
+    Prekey,
+    Otk,
 }
 
 #[derive(PartialEq, Eq)]
@@ -137,7 +134,7 @@ impl ProtocolData {
         let ProtocolData::CryptMessage { payload, data_type, sender } = self else {
             return Err(ProtocolError::LogicFault { reason: "Attempted to convert non-crypt message into decoded message.".into() })
         };
-        let raw_data = receiver.recv(&payload)?;
+        let raw_data = receiver.recv(payload)?;
         Ok(DecodedMessage {
             payload: raw_data,
             datatype: data_type.clone(),

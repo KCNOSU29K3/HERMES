@@ -30,21 +30,21 @@ impl PrivateKey {
     ///
     /// consumes the scalar.
     pub fn load(key: [u8; PRIVATE_KEY_LENGTH]) -> Self {
-        return Self {
+        Self {
             private_key: RawPrivateKey::from(key),
-        };
+        }
     }
 
     /// Generates a new private key.
     pub fn new() -> Self {
-        return Self {
+        Self {
             private_key: RawPrivateKey::new(&mut OsRng),
-        };
+        }
     }
 
     /// Returns the public counterpart to this key.
     pub fn public_key(&self) -> PublicKey {
-        return self.private_key.public_key();
+        self.private_key.public_key()
     }
 
     /// Performs a ECDH exchange with a given peer key.
@@ -53,7 +53,7 @@ impl PrivateKey {
     ///
     /// `peer_key` - The public key of the other party. Must be 32 bytes long.
     pub fn exchange(&self, peer_key: &PublicKey) -> KeyExchangeSecret {
-        return self.private_key.exchange(peer_key);
+        self.private_key.exchange(peer_key)
     }
 
     /// Signs data with this key for verification purposes.
@@ -66,7 +66,7 @@ impl PrivateKey {
     ///
     /// The generated signature, as a [u8] slice of length 64.
     pub fn sign(&self, data: &[u8]) -> Signature {
-        return self.private_key.sign(&mut OsRng, &[data]);
+        self.private_key.sign(&mut OsRng, &[data])
     }
 
     /// Verifies from a peer given their public key.
@@ -79,19 +79,19 @@ impl PrivateKey {
     ///
     /// `signature` - The signature to verify, as a [u8] slice of length 64.
     pub fn verify(peer_key: &PublicKey, data: &[u8], signature: &Signature) -> bool {
-        return RawPrivateKey::verify(peer_key, &[data], signature);
+        RawPrivateKey::verify(peer_key, &[data], signature)
     }
 
     /// Returns the private scalar value as a vector of length 32.
     pub fn private_key(&self) -> ExportedPrivateKey {
-        return self.private_key.private_key();
+        self.private_key.private_key()
     }
 }
 
 impl From<RawPrivateKey> for PrivateKey {
     fn from(value: RawPrivateKey) -> Self {
-        return Self {
-            private_key: RawPrivateKey::from(value),
-        };
+        Self {
+            private_key: value,
+        }
     }
 }

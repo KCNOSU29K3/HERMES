@@ -12,9 +12,9 @@ pub struct HKDF {
 }
 
 impl HashProtocol {
-    pub fn sha256(salt:Option<&[u8]>, ikm: &[u8]) -> Self {let kdf = Hkdf::<Sha256>::new(salt, ikm); return HashProtocol::Sha256(kdf) }
-    pub fn sha512(salt:Option<&[u8]>, ikm: &[u8]) -> Self {let kdf = Hkdf::<Sha512>::new(salt, ikm); return HashProtocol::Sha512(kdf) }
-    pub fn to_hkdf(self) -> HKDF {return HKDF {protocol: self} }
+    pub fn sha256(salt:Option<&[u8]>, ikm: &[u8]) -> Self {let kdf = Hkdf::<Sha256>::new(salt, ikm); HashProtocol::Sha256(kdf) }
+    pub fn sha512(salt:Option<&[u8]>, ikm: &[u8]) -> Self {let kdf = Hkdf::<Sha512>::new(salt, ikm); HashProtocol::Sha512(kdf) }
+    pub fn to_hkdf(self) -> HKDF { HKDF {protocol: self} }
 
 
     fn expand(&self, info:Option<&[u8]>, len:usize) -> Vec<u8> {
