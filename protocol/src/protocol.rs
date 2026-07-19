@@ -1,10 +1,11 @@
-use crate::{
-    datatypes::{DBData, DataServer, DbWrite, DecodedMessage, ProtocolData, UserInterface},
-    errors::ProtocolError,
-};
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use crate::datatypes::{Addr, CryptoProtocol, DbAccessProtocol, DbQuery, RequestID};
+use hcrypt::double_ratchet::PrekeyBundle;
+
+use crate::datatypes::{Addr, DecodedMessage, ProtocolData, RequestID, TimeData};
+use crate::errors::ProtocolError;
+use crate::networking::{DBData, DbQuery, DbWrite};
+use crate::traits::{CryptoProtocol, DataServer, DbAccessProtocol, UserInterface};
 
 pub const MIN_KEYS: usize = 64;
 
@@ -68,10 +69,11 @@ impl HermesProtocol {
                                 .conversation_protocol
                                 .borrow_mut()
                                 .generate_keys(MIN_KEYS - current_keys);
+                            let mut builder = self.database_protocol.write_db();
                             for key in keys {
-                                self.database_protocol
-                                    .write_db_or_cache(DbWrite::Prekey(key));
+                                builder.add(DbWrite::Prekey(key));
                             }
+                            builder.write_or_cache();
                         }
                     })
                     .map_err(|err| {
@@ -111,7 +113,8 @@ impl HermesProtocol {
     pub fn create_new_conversation(&mut self, target: Addr) {
         let query_id = self
             .database_protocol
-            .query_db(DbQuery::IdentityKey)
+            .query_db()
+            .add(DbQuery::IdentityKey)
             .add(DbQuery::Prekey)
             .add(DbQuery::Otk)
             .execute();
@@ -121,22 +124,13 @@ impl HermesProtocol {
         let data_serving_protocol = self.data_serving_protocol.clone();
 
         let response_handler = Box::new(move |data: Vec<DBData>| {
-            let DBData::IdentityKey(key) = data[0] else {
-                return Err(ProtocolError::FailedRequest {
-                    reason: "Expected identity key but got something else.".into(),
-                });
-            };
-            let DBData::Prekey(ref bundle) = data[1] else {
-                return Err(ProtocolError::FailedRequest {
-                    reason: "Expected prekey bundle but got something else.".into(),
-                });
-            };
-
-            let DBData::Otk(ref otk) = data[2] else {
-                return Err(ProtocolError::FailedRequest {
-                    reason: "Expected Otk but got something else.".into(),
-                });
-            };
+            if data.len() != 3 {
+                return Err(ProtocolError::LogicFault { reason: "DB failed to provide data of len 3 (response_handler)".into() });
+            }
+            let mut data = data.into_iter();
+            let key = data.next().unwrap().try_into()?;
+            let bundle = &data.next().unwrap().try_into()?;
+            let otk = &data.next().unwrap().try_into()?;
 
             let initiating_bundle = conversation_protocol
                 .borrow_mut()
@@ -160,19 +154,16 @@ impl HermesProtocol {
         );
     }
 
-    pub fn send_message(
-        &mut self,
-        who: &Addr,
-        message: DecodedMessage,
-    ) {
+    pub fn send_message(&mut self, who: &Addr, message: DecodedMessage) {
         if !self.conversation_protocol.borrow().conversation_exists(who) {
-            self.interface_protocol.protocol_error(&ProtocolError::UnknownUser {
-                user: who.clone(),
-                reason: "No active conversation with that ID.".into(),
-            });
+            self.interface_protocol
+                .protocol_error(&ProtocolError::UnknownUser {
+                    user: who.clone(),
+                    reason: "No active conversation with that ID.".into(),
+                });
         }
-        
-        self
+
+        _ = self
             .conversation_protocol
             .borrow_mut()
             .send_message(who, message)
@@ -181,7 +172,33 @@ impl HermesProtocol {
             .map_err(|err| {
                 self.interface_protocol.protocol_error(&err);
             });
-        Ok(())
+    }
+
+    pub fn delete_conversation(&mut self, who: &Addr) {
+        _ = self
+            .conversation_protocol
+            .borrow_mut()
+            .delete_conversation(who)
+            .map_err(|err| {
+                self.interface_protocol.protocol_error(&err);
+            });
+    }
+}
+
+// time implementations
+impl HermesProtocol {
+    pub fn new_event(&mut self, event: TimeData) {
+        match event {
+            TimeData::PrekeyRotation => {
+                let (public_key, signature) =
+                    self.conversation_protocol.borrow_mut().rotate_prekey();
+                let bundle = PrekeyBundle::new(public_key, signature);
+                self.database_protocol
+                    .write_db()
+                    .add(DbWrite::Prekey(bundle))
+                    .write_or_cache();
+            }
+        }
     }
 }
 
@@ -193,12 +210,13 @@ impl HermesProtocol {
         data: Vec<DBData>,
         timed_out: bool,
     ) -> Result<(), ProtocolError> {
-        if let Some(handler) = self.request_mapper.get_mut(&query_id) {
+        if let Some(mut handler) = self.request_mapper.remove(&query_id) {
             if timed_out {
                 (handler.timeout)()?;
                 Ok(())
             } else {
-                (handler.and_then)(data)
+                (handler.and_then)(data)?;
+                Ok(())
             }
         } else {
             Err(ProtocolError::UnknownRequest {
