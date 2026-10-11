@@ -20,7 +20,8 @@ pub struct CryptMessage {
     pub datatype: MessageType,
     pub sender: Addr,
 }
- 
+
+#[derive(Clone)]
 pub struct DecodedMessage {
     pub payload: Vec<u8>,
     pub datatype: MessageType,

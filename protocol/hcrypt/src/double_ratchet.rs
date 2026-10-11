@@ -81,7 +81,7 @@ pub struct InitiatingBundle {
 //     pub one_time_key: PublicKey,
 // }
 //
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct PrekeyBundle {
     pub prekey: PublicKey,
     pub prekey_signature: Signature,

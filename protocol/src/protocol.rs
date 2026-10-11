@@ -136,7 +136,7 @@ impl HermesProtocol {
                 .borrow_mut()
                 .new_conversation(&target, key, bundle, otk)?;
 
-            data_serving_protocol.send_else_cache_data(ProtocolData::InitiatingBundle {
+            data_serving_protocol.send_else_cache_data(&target, ProtocolData::InitiatingBundle {
                 who: (*user).clone(),
                 data: initiating_bundle,
             });
@@ -168,7 +168,7 @@ impl HermesProtocol {
             .borrow_mut()
             .send_message(who, message)
             .map(|data| data.self_as_protocol_data())
-            .map(|data| self.data_serving_protocol.send_else_cache_data(data))
+            .map(|data| self.data_serving_protocol.send_else_cache_data(who, data))
             .map_err(|err| {
                 self.interface_protocol.protocol_error(&err);
             });

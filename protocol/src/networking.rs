@@ -32,19 +32,21 @@
 use hcrypt::{double_ratchet::PrekeyBundle, key::PublicKey};
 
 use crate::errors::ProtocolError;
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum DbQuery {
     IdentityKey,
     Prekey,
     Otk,
 }
 
+#[derive(Debug, Clone)]
 pub enum DBData {
     IdentityKey(PublicKey),
     Prekey(PrekeyBundle),
     Otk(Option<PublicKey>)
 }
 
+#[derive(Debug, Clone)]
 pub enum DbWrite {
     Prekey(PrekeyBundle),
 }

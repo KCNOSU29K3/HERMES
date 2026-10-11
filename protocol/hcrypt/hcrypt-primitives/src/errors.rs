@@ -11,7 +11,7 @@ error_set! {
         }
     }
 
-    #[derive(Serialize, Deserialize)]
+    #[derive(Serialize, Deserialize, Clone)]
     pub DecryptionError := {
         InvalidKey,
         #[display("Fault when decrypting: {reason}")]
@@ -21,7 +21,7 @@ error_set! {
         InvalidSignature
     } || SymmetricKeyGenerationError
 
-    #[derive(Serialize, Deserialize)]
+    #[derive(Serialize, Deserialize, Clone)]
     pub DoubleRatchetError := {
         OutOfQueueSpace,
         NonExistentKey
